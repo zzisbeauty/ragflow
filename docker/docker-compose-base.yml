@@ -3,8 +3,8 @@ services:
     container_name: ragflow-es-01
     profiles:
       - elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
-    volumes:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION} # 容器镜像 + 版本信息
+    volumes: # 容器数据挂载于容器的位置
       - esdata01:/usr/share/elasticsearch/data
     ports:
       - ${ES_PORT}:9200
@@ -33,7 +33,7 @@ services:
       retries: 120
     networks:
       - ragflow
-    restart: on-failure
+    restart: on-failure # 失败时重启
 
   infinity:
     container_name: ragflow-infinity
