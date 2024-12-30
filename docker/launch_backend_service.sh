@@ -45,6 +45,9 @@ cleanup() {
 # Trap SIGINT and SIGTERM to invoke cleanup 捕获 SIGINT 和 SIGTERM 信号，并调用 cleanup 函数进行清理工作
 trap cleanup SIGINT SIGTERM
 
+
+
+
 # Function to execute task_executor with retry logic 启动任务执行器的函数
 task_exe(){
     local task_id=$1

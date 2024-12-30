@@ -7,14 +7,14 @@ services:
     volumes: # 容器数据挂载于容器的位置
       - esdata01:/usr/share/elasticsearch/data
     ports:
-      - ${ES_PORT}:9200
+      - ${ES_PORT}:9200 # 容器 9200 端口 暴露在 宿主机 ${ES_PORT} 端口，即1200端口； 容器的状态将会是 0.0.0.0:1200->9200/tcp 表示宿主机的 1200 端口转发到容器的 9200 端口
     env_file: .env
     environment:
       - node.name=es01
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - bootstrap.memory_lock=false
       - discovery.type=single-node
-      - xpack.security.enabled=true
+      - xpack.security.enabled=false # 取消密码
       - xpack.security.http.ssl.enabled=false
       - xpack.security.transport.ssl.enabled=false
       - cluster.routing.allocation.disk.watermark.low=5gb
@@ -31,8 +31,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
-    networks:
-      - ragflow
+    # networks: # 容器加入了自定义网络 ragflow，用于服务间通信。
+    #   - ragflow
     restart: on-failure # 失败时重启
 
   infinity:
@@ -56,8 +56,8 @@ services:
       nofile:
         soft: 500000
         hard: 500000
-    networks:
-      - ragflow
+    # networks:
+    #   - ragflow
     healthcheck:
       test: ["CMD", "curl", "http://localhost:23820/admin/node/current"]
       interval: 10s
@@ -86,8 +86,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/data/application/init.sql
-    networks:
-      - ragflow
+    # networks:
+    #   - ragflow
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-uroot", "-p${MYSQL_PASSWORD}"]
       interval: 10s
@@ -109,8 +109,8 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - minio_data:/data
-    networks:
-      - ragflow
+    # networks:
+    #   - ragflow
     restart: on-failure
 
   redis:
@@ -122,8 +122,8 @@ services:
       - ${REDIS_PORT}:6379
     volumes:
       - redis_data:/data
-    networks:
-      - ragflow
+    # networks:
+    #   - ragflow
     restart: on-failure
 
 
