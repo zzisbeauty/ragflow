@@ -31,8 +31,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
-    # networks: # 容器加入了自定义网络 ragflow，用于服务间通信。
-    #   - ragflow
+    networks: # 容器加入了自定义网络 ragflow，用于服务间通信。
+      - ragflow
     restart: on-failure # 失败时重启
 
   infinity:
@@ -56,8 +56,8 @@ services:
       nofile:
         soft: 500000
         hard: 500000
-    # networks:
-    #   - ragflow
+    networks:
+      - ragflow
     healthcheck:
       test: ["CMD", "curl", "http://localhost:23820/admin/node/current"]
       interval: 10s
@@ -86,8 +86,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/data/application/init.sql
-    # networks:
-    #   - ragflow
+    networks:
+      - ragflow
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-uroot", "-p${MYSQL_PASSWORD}"]
       interval: 10s
@@ -109,8 +109,8 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - minio_data:/data
-    # networks:
-    #   - ragflow
+    networks:
+      - ragflow
     restart: on-failure
 
   redis:
@@ -122,9 +122,11 @@ services:
       - ${REDIS_PORT}:6379
     volumes:
       - redis_data:/data
-    # networks:
-    #   - ragflow
+    networks:
+      - ragflow
     restart: on-failure
+
+
 
 
 
@@ -139,6 +141,8 @@ volumes:
     driver: local
   redis_data:
     driver: local
+
+
 
 networks:
   ragflow:
