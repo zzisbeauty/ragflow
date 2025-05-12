@@ -22,7 +22,7 @@
         <img alt="Static Badge" src="https://img.shields.io/badge/Online-Demo-4e6b99">
     </a>
     <a href="https://hub.docker.com/r/infiniflow/ragflow" target="_blank">
-        <img src="https://img.shields.io/badge/docker_pull-ragflow:v0.16.0-brightgreen" alt="docker pull infiniflow/ragflow:v0.16.0">
+        <img src="https://img.shields.io/badge/docker_pull-ragflow:v0.18.0-brightgreen" alt="docker pull infiniflow/ragflow:v0.18.0">
     </a>
     <a href="https://github.com/infiniflow/ragflow/releases/latest">
         <img src="https://img.shields.io/github/v/release/infiniflow/ragflow?color=blue&label=Latest%20Release" alt="Latest Release">
@@ -36,7 +36,7 @@
   <a href="https://ragflow.io/docs/dev/">Document</a> |
   <a href="https://github.com/infiniflow/ragflow/issues/4214">Roadmap</a> |
   <a href="https://twitter.com/infiniflowai">Twitter</a> |
-  <a href="https://discord.gg/4XxujFgUN7">Discord</a> |
+  <a href="https://discord.gg/NjYzJD3GM3">Discord</a> |
   <a href="https://demo.ragflow.io">Demo</a>
 </h4>
 
@@ -55,11 +55,10 @@
 
 ## 🔥 近期更新
 
-- 2025-02-05 更新硅基流动的模型列表，增加了对 Deepseek-R1/DeepSeek-V3 的支持。
+- 2025-03-19 PDF和DOCX中的图支持用多模态大模型去解析得到描述.
+- 2025-02-28 结合互联网搜索（Tavily），对于任意大模型实现类似 Deep Research 的推理功能.
 - 2025-01-26 优化知识图谱的提取和应用，提供了多种配置选择。
-- 2024-12-18 升级了 Deepdoc 的文档布局分析模型。
-- 2024-12-04 支持知识库的 Pagerank 分数。
-- 2024-11-22 完善了 Agent 中的变量定义和使用。
+- 2024-12-18 升级了 DeepDoc 的文档布局分析模型。
 - 2024-11-01 对解析后的 chunk 加入关键词抽取和相关问题生成以提高召回的准确度。
 - 2024-08-22 支持用 RAG 技术实现从自然语言到 SQL 语句的转换。
 
@@ -146,19 +145,27 @@
 
 3. 进入 **docker** 文件夹，利用提前编译好的 Docker 镜像启动服务器：
 
-   > 运行以下命令会自动下载 RAGFlow slim Docker 镜像 `v0.16.0-slim`。请参考下表查看不同 Docker 发行版的描述。如需下载不同于 `v0.16.0-slim` 的 Docker 镜像，请在运行 `docker compose` 启动服务之前先更新 **docker/.env** 文件内的 `RAGFLOW_IMAGE` 变量。比如，你可以通过设置 `RAGFLOW_IMAGE=infiniflow/ragflow:v0.16.0` 来下载 RAGFlow 镜像的 `v0.16.0` 完整发行版。
+> [!CAUTION]
+> 请注意，目前官方提供的所有 Docker 镜像均基于 x86 架构构建，并不提供基于 ARM64 的 Docker 镜像。
+> 如果你的操作系统是 ARM64 架构，请参考[这篇文档](https://ragflow.io/docs/dev/build_docker_image)自行构建 Docker 镜像。
+
+   > 运行以下命令会自动下载 RAGFlow slim Docker 镜像 `v0.18.0-slim`。请参考下表查看不同 Docker 发行版的描述。如需下载不同于 `v0.18.0-slim` 的 Docker 镜像，请在运行 `docker compose` 启动服务之前先更新 **docker/.env** 文件内的 `RAGFLOW_IMAGE` 变量。比如，你可以通过设置 `RAGFLOW_IMAGE=infiniflow/ragflow:v0.18.0` 来下载 RAGFlow 镜像的 `v0.18.0` 完整发行版。
 
    ```bash
    $ cd ragflow/docker
+   # Use CPU for embedding and DeepDoc tasks:
    $ docker compose -f docker-compose.yml up -d
+
+   # To use GPU to accelerate embedding and DeepDoc tasks:
+   # docker compose -f docker-compose-gpu.yml up -d
    ```
 
    | RAGFlow image tag | Image size (GB) | Has embedding models? | Stable?                  |
    | ----------------- | --------------- | --------------------- | ------------------------ |
-   | v0.16.0           | &approx;9       | :heavy_check_mark:    | Stable release           |
-   | v0.16.0-slim      | &approx;2       | ❌                    | Stable release           |
+   | v0.18.0           | &approx;9       | :heavy_check_mark:    | Stable release           |
+   | v0.18.0-slim      | &approx;2       | ❌                    | Stable release           |
    | nightly           | &approx;9       | :heavy_check_mark:    | _Unstable_ nightly build |
-   | nightly-slim      | &approx;2       | ❌                    | _Unstable_ nightly build |
+   | nightly-slim      | &approx;2       | ❌                     | _Unstable_ nightly build |
 
    > [!TIP]
    > 如果你遇到 Docker 镜像拉不下来的问题，可以在 **docker/.env** 文件内根据变量 `RAGFLOW_IMAGE` 的注释提示选择华为云或者阿里云的相应镜像。
@@ -182,12 +189,9 @@
     /_/ |_|/_/  |_|\____//_/    /_/ \____/ |__/|__/
 
     * Running on all addresses (0.0.0.0)
-    * Running on http://127.0.0.1:9380
-    * Running on http://x.x.x.x:9380
-    INFO:werkzeug:Press CTRL+C to quit
    ```
 
-   > 如果您跳过这一步系统确认步骤就登录 RAGFlow，你的浏览器有可能会提示 `network anormal` 或 `网络异常`，因为 RAGFlow 可能并未完全启动成功。
+   > 如果您在没有看到上面的提示信息出来之前，就尝试登录 RAGFlow，你的浏览器有可能会提示 `network anormal` 或 `网络异常`。
 
 5. 在你的浏览器中输入你的服务器对应的 IP 地址并登录 RAGFlow。
    > 上面这个例子中，您只需输入 http://IP_OF_YOUR_MACHINE 即可：未改动过配置则无需输入端口（默认的 HTTP 服务端口 80）。
@@ -248,7 +252,7 @@ RAGFlow 默认使用 Elasticsearch 存储文本和向量数据. 如果要切换�
 ```bash
 git clone https://github.com/infiniflow/ragflow.git
 cd ragflow/
-docker build --build-arg LIGHTEN=1 --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:nightly-slim .
+docker build --platform linux/amd64 --build-arg LIGHTEN=1 --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:nightly-slim .
 ```
 
 ## 🔧 源码编译 Docker 镜像（包含 embedding 模型）
@@ -258,7 +262,7 @@ docker build --build-arg LIGHTEN=1 --build-arg NEED_MIRROR=1 -f Dockerfile -t in
 ```bash
 git clone https://github.com/infiniflow/ragflow.git
 cd ragflow/
-docker build --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:nightly .
+docker build --platform linux/amd64 --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:nightly .
 ```
 
 ## 🔨 以源代码启动服务
@@ -266,8 +270,8 @@ docker build --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:night
 1. 安装 uv。如已经安装，可跳过本步骤：
 
    ```bash
-   pipx install uv
-   export UV_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+   pipx install uv pre-commit
+   export UV_INDEX=https://mirrors.aliyun.com/pypi/simple
    ```
 
 2. 下载源代码并安装 Python 依赖：
@@ -276,6 +280,8 @@ docker build --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:night
    git clone https://github.com/infiniflow/ragflow.git
    cd ragflow/
    uv sync --python 3.10 --all-extras # install RAGFlow dependent python modules
+   uv run download_deps.py
+   pre-commit install
    ```
 
 3. 通过 Docker Compose 启动依赖的服务（MinIO, Elasticsearch, Redis, and MySQL）：
@@ -284,12 +290,11 @@ docker build --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:night
    docker compose -f docker/docker-compose-base.yml up -d
    ```
 
-   在 `/etc/hosts` 中添加以下代码，将 **conf/service_conf.yaml** 文件中的所有 host 地址都解析为 `127.0.0.1`：
+   在 `/etc/hosts` 中添加以下代码，目的是将 **conf/service_conf.yaml** 文件中的所有 host 地址都解析为 `127.0.0.1`：
 
    ```
    127.0.0.1       es01 infinity mysql minio redis
    ```
-
 4. 如果无法访问 HuggingFace，可以把环境变量 `HF_ENDPOINT` 设成相应的镜像站点：
 
    ```bash
@@ -318,13 +323,21 @@ docker build --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:night
    _以下界面说明系统已经成功启动：_
 
    ![](https://github.com/user-attachments/assets/0daf462c-a24d-4496-a66f-92533534e187)
+8. 开发完成后停止 RAGFlow 服务
+   停止 RAGFlow 前端和后端服务：
+   ```bash
+   pkill -f "ragflow_server.py|task_executor.py"
+   ```
 
 ## 📚 技术文档
 
 - [Quickstart](https://ragflow.io/docs/dev/)
-- [User guide](https://ragflow.io/docs/dev/category/guides)
+- [Configuration](https://ragflow.io/docs/dev/configurations)
+- [Release notes](https://ragflow.io/docs/dev/release_notes)
+- [User guides](https://ragflow.io/docs/dev/category/guides)
+- [Developer guides](https://ragflow.io/docs/dev/category/developers)
 - [References](https://ragflow.io/docs/dev/category/references)
-- [FAQ](https://ragflow.io/docs/dev/faq)
+- [FAQs](https://ragflow.io/docs/dev/faq)
 
 ## 📜 路线图
 
@@ -332,7 +345,7 @@ docker build --build-arg NEED_MIRROR=1 -f Dockerfile -t infiniflow/ragflow:night
 
 ## 🏄 开源社区
 
-- [Discord](https://discord.gg/4XxujFgUN7)
+- [Discord](https://discord.gg/zd4qPW6t)
 - [Twitter](https://twitter.com/infiniflowai)
 - [GitHub Discussions](https://github.com/orgs/infiniflow/discussions)
 

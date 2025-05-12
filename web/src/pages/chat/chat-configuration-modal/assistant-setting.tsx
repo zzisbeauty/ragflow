@@ -1,4 +1,5 @@
 import KnowledgeBaseItem from '@/components/knowledge-base-item';
+import { TavilyItem } from '@/components/tavily-item';
 import { useTranslate } from '@/hooks/common-hooks';
 import { useFetchTenantInfo } from '@/hooks/user-setting-hooks';
 import { PlusOutlined } from '@ant-design/icons';
@@ -147,6 +148,7 @@ const AssistantSetting = ({
       >
         <Switch onChange={handleTtsChange} />
       </Form.Item>
+      <TavilyItem></TavilyItem>
       <KnowledgeBaseItem
         required={false}
         onChange={handleChange}

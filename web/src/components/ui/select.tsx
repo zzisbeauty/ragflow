@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { ControllerRenderProps } from 'react-hook-form';
 
 import { FormControl } from '@/components/ui/form';
-import { useCallback, useEffect } from 'react';
+import { forwardRef, useCallback, useEffect } from 'react';
 
 const Select = SelectPrimitive.Root;
 
@@ -20,12 +20,13 @@ const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
     onReset?: () => void;
+    allowClear?: boolean;
   }
->(({ className, children, value, onReset, ...props }, ref) => (
+>(({ className, children, value, onReset, allowClear, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-10 w-full items-center justify-between rounded-md border border-input bg-colors-background-inverse-weak px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+      'flex h-8 w-full items-center justify-between rounded-md border border-input bg-colors-background-inverse-weak px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
       className,
     )}
     {...props}
@@ -37,7 +38,7 @@ const SelectTrigger = React.forwardRef<
         event.stopPropagation();
       }}
     >
-      {value ? (
+      {value && allowClear ? (
         <X className="h-4 w-4 opacity-50 cursor-pointer" onClick={onReset} />
       ) : (
         <ChevronDown className="h-4 w-4 opacity-50" />
@@ -185,10 +186,14 @@ export type RAGFlowSelectGroupOptionType = {
   options: RAGFlowSelectOptionType[];
 };
 
-type RAGFlowSelectProps = Partial<ControllerRenderProps> & {
+export type RAGFlowSelectProps = Partial<ControllerRenderProps> & {
   FormControlComponent?: typeof FormControl;
   options?: (RAGFlowSelectOptionType | RAGFlowSelectGroupOptionType)[];
-};
+  allowClear?: boolean;
+  placeholder?: React.ReactNode;
+  contentProps?: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>;
+  triggerClassName?: string;
+} & SelectPrimitive.SelectProps;
 
 /**
  *
@@ -206,18 +211,29 @@ type RAGFlowSelectProps = Partial<ControllerRenderProps> & {
  * }
  * @return {*}
  */
-export function RAGFlowSelect({
-  value: initialValue,
-  onChange,
-  FormControlComponent,
-  options = [],
-}: RAGFlowSelectProps) {
+export const RAGFlowSelect = forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  RAGFlowSelectProps
+>(function (
+  {
+    value: initialValue,
+    onChange,
+    FormControlComponent,
+    options = [],
+    allowClear,
+    placeholder,
+    contentProps = {},
+    defaultValue,
+    triggerClassName,
+  },
+  ref,
+) {
   const [key, setKey] = React.useState(+new Date());
-  const [value, setValue] = React.useState<string | undefined>(undefined);
+  const [value, setValue] = React.useState<string | undefined>(defaultValue);
 
   const FormControlWidget = FormControlComponent
     ? FormControlComponent
-    : React.Fragment;
+    : ({ children }: React.PropsWithChildren) => <div>{children}</div>;
 
   const handleChange = useCallback(
     (val?: string) => {
@@ -245,14 +261,16 @@ export function RAGFlowSelect({
     <Select onValueChange={handleChange} value={value} key={key}>
       <FormControlWidget>
         <SelectTrigger
-          className="bg-colors-background-inverse-weak"
           value={value}
           onReset={handleReset}
+          allowClear={allowClear}
+          ref={ref}
+          className={triggerClassName}
         >
-          <SelectValue placeholder="Select a verified email to display" />
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
       </FormControlWidget>
-      <SelectContent>
+      <SelectContent {...contentProps}>
         {options.map((o, idx) => {
           if ('value' in o) {
             return (
@@ -280,4 +298,6 @@ export function RAGFlowSelect({
       </SelectContent>
     </Select>
   );
-}
+});
+
+RAGFlowSelect.displayName = 'RAGFlowSelect';

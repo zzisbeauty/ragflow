@@ -17,7 +17,6 @@
 import logging
 import random
 from collections import Counter
-from typing import Optional
 
 from rag.utils import num_tokens_from_string
 from . import rag_tokenizer
@@ -38,7 +37,7 @@ all_codecs = [
     'cp874', 'cp875', 'cp932', 'cp949', 'cp950', 'cp1006', 'cp1026', 'cp1125',
     'cp1140', 'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255', 'cp1256',
     'cp1257', 'cp1258', 'euc_jp', 'euc_jis_2004', 'euc_jisx0213', 'euc_kr',
-    'gb2312', 'gb18030', 'hz', 'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2',
+    'gb18030', 'hz', 'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2',
     'iso2022_jp_2004', 'iso2022_jp_3', 'iso2022_jp_ext', 'iso2022_kr', 'latin_1',
     'iso8859_2', 'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6', 'iso8859_7',
     'iso8859_8', 'iso8859_9', 'iso8859_10', 'iso8859_11', 'iso8859_13',
@@ -54,7 +53,8 @@ all_codecs = [
 def find_codec(blob):
     detected = chardet.detect(blob[:1024])
     if detected['confidence'] > 0.5:
-        return detected['encoding']
+        if detected['encoding'] == "ascii":
+            return "utf-8"
 
     for c in all_codecs:
         try:
@@ -258,7 +258,7 @@ def tokenize(d, t, eng):
 def tokenize_chunks(chunks, doc, eng, pdf_parser=None):
     res = []
     # wrap up as es documents
-    for ck in chunks:
+    for ii, ck in enumerate(chunks):
         if len(ck.strip()) == 0:
             continue
         logging.debug("-- {}".format(ck))
@@ -270,12 +270,13 @@ def tokenize_chunks(chunks, doc, eng, pdf_parser=None):
                 ck = pdf_parser.remove_tag(ck)
             except NotImplementedError:
                 pass
+        else:
+            add_positions(d, [[ii]*5])
         tokenize(d, ck, eng)
         res.append(d)
     return res
 
-
-def tokenize_chunks_docx(chunks, doc, eng, images):
+def tokenize_chunks_with_images(chunks, doc, eng, images):
     res = []
     # wrap up as es documents
     for ck, image in zip(chunks, images):
@@ -287,7 +288,6 @@ def tokenize_chunks_docx(chunks, doc, eng, images):
         tokenize(d, ck, eng)
         res.append(d)
     return res
-
 
 def tokenize_table(tbls, doc, eng, batch_size=10):
     res = []
@@ -537,7 +537,46 @@ def naive_merge(sections, chunk_token_num=128, delimiter="\n。；！？"):
         add_chunk(sec, pos)
 
     return cks
+    
 
+def naive_merge_with_images(texts, images, chunk_token_num=128, delimiter="\n。；！？"):
+    if not texts or len(texts) != len(images):
+        return [], []
+    # Enuser texts is str not tuple, if it is tuple, convert to str (get the first item)
+    if isinstance(texts[0], tuple):
+        texts = [t[0] for t in texts]
+    cks = [""]
+    result_images = [None]
+    tk_nums = [0]
+
+    def add_chunk(t, image, pos=""):
+        nonlocal cks, result_images, tk_nums, delimiter
+        tnum = num_tokens_from_string(t)
+        if not pos:
+            pos = ""
+        if tnum < 8:
+            pos = ""
+        # Ensure that the length of the merged chunk does not exceed chunk_token_num
+        if tk_nums[-1] > chunk_token_num:
+            if t.find(pos) < 0:
+                t += pos
+            cks.append(t)
+            result_images.append(image)
+            tk_nums.append(tnum)
+        else:
+            if cks[-1].find(pos) < 0:
+                t += pos
+            cks[-1] += t
+            if result_images[-1] is None:
+                result_images[-1] = image
+            else:
+                result_images[-1] = concat_img(result_images[-1], image)
+            tk_nums[-1] += tnum
+
+    for text, image in zip(texts, images):
+        add_chunk(text, image)
+
+    return cks, result_images
 
 def docx_question_level(p, bull=-1):
     txt = re.sub(r"\u3000", " ", p.text).strip()
@@ -604,9 +643,6 @@ def naive_merge_docx(sections, chunk_token_num=128, delimiter="\n。；！？"):
     return cks, images
 
 
-def extract_between(text: str, start_tag: str, end_tag: str) -> Optional[str]:
+def extract_between(text: str, start_tag: str, end_tag: str) -> list[str]:
     pattern = re.escape(start_tag) + r"(.*?)" + re.escape(end_tag)
-    matches = re.findall(pattern, text, flags=re.DOTALL)
-    if matches:
-        return matches[-1].strip()
-    return None
+    return re.findall(pattern, text, flags=re.DOTALL)

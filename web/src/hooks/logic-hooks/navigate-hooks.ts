@@ -42,9 +42,12 @@ export const useNavigatePage = () => {
     navigate(Routes.Agents);
   }, [navigate]);
 
-  const navigateToAgent = useCallback(() => {
-    navigate(Routes.Agent);
-  }, [navigate]);
+  const navigateToAgent = useCallback(
+    (id: string) => () => {
+      navigate(`${Routes.Agent}/${id}`);
+    },
+    [navigate],
+  );
 
   const navigateToAgentTemplates = useCallback(() => {
     navigate(Routes.AgentTemplates);
@@ -91,6 +94,13 @@ export const useNavigatePage = () => {
     [getQueryString, id, navigate],
   );
 
+  const navigateToFiles = useCallback(
+    (folderId?: string) => {
+      navigate(`${Routes.Files}?folderId=${folderId}`);
+    },
+    [navigate],
+  );
+
   return {
     navigateToDatasetList,
     navigateToDataset,
@@ -106,5 +116,6 @@ export const useNavigatePage = () => {
     navigateToAgentTemplates,
     navigateToSearchList,
     navigateToSearch,
+    navigateToFiles,
   };
 };
