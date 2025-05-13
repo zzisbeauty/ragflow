@@ -101,12 +101,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--version", default=False, help="RAGFlow version", action="store_true"
-    )
-    parser.add_argument(
-        "--debug", default=False, help="debug mode", action="store_true"
-    )
+    parser.add_argument("--version", default=False, help="RAGFlow version", action="store_true")
+    parser.add_argument("--debug", default=False, help="debug mode", action="store_true")
     args = parser.parse_args()
     if args.version:
         print(get_ragflow_version())
